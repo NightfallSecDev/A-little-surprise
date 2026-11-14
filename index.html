@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#ffe5ef" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>A Little Question for You 💗</title>
+  <style>
+    :root {
+      --pink: #ff5c9a;
+      --deep-pink: #e83e83;
+      --soft-pink: #fff0f6;
+      --ink: #54233b;
+      --muted: #8f6477;
+      --card: rgba(255,255,255,.78);
+      --glow: rgba(255, 92, 154, .35);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      min-height: 100vh;
+      overflow-x: hidden;
+      font-family: ui-rounded, "Segoe UI", system-ui, -apple-system, sans-serif;
+      color: var(--ink);
+      background: linear-gradient(135deg, #fff7fb, #ffe5ef 48%, #fff1f7);
+    }
+
+    /* ── Starfield canvas ── */
+    #stars {
+      position: fixed; inset: 0; z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ── Layout ── */
+    button { font: inherit; cursor: pointer; }
+    .wrap {
+      position: relative; z-index: 1;
+      width: min(920px, 92vw); margin: auto;
+      padding: 28px 0 60px;
+    }
+
+    /* ── Top line ── */
+    .topline {
+      text-align: center; color: var(--muted);
+      font-size: .9rem; letter-spacing: .08em;
+      text-transform: uppercase;
+      opacity: 0;
+      animation: fadeSlideDown .8s .3s ease forwards;
+    }
+
+    /* ── Hero section ── */
+    .hero {
+      min-height: 88vh;
+      display: grid; place-items: center;
+      text-align: center;
+    }
+
+    /* ── Card ── */
+    .card {
+      width: min(640px, 100%);
+      padding: clamp(28px, 6vw, 56px);
+      background: var(--card);
+      border: 1px solid rgba(255,92,154,.18);
+      border-radius: 32px;
+      box-shadow:
+        0 24px 70px rgba(190, 61, 117, .12),
+        0 0 0 1px rgba(255,255,255,.5) inset;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      position: relative; z-index: 1;
+    }
+    /* card entrance */
+    .card {
+      opacity: 0; transform: translateY(30px) scale(.97);
+      animation: cardIn .7s ease forwards;
+    }
+    .card.hidden { display: none !important; }
+
+    /* ── Glow ring on hover ── */
+    .card::before {
+      content: '';
+      position: absolute; inset: -2px;
+      border-radius: 34px;
+      background: linear-gradient(135deg, rgba(255,92,154,.25), rgba(255,180,208,.15), transparent 60%);
+      opacity: 0;
+      transition: opacity .4s ease;
+      z-index: -1;
+    }
+    .card:hover::before { opacity: 1; }
+
+    /* ── Typography ── */
+    .eyebrow {
+      display: inline-block;
+      background: #ffe0ed; color: var(--deep-pink);
+      border-radius: 99px; padding: 8px 16px;
+      font-size: .85rem; font-weight: 700;
+      opacity: 0;
+      animation: fadeSlideUp .5s .25s ease forwards;
+    }
+    h1 {
+      font-size: clamp(2.25rem, 7vw, 4.5rem);
+      line-height: 1.05; margin: 18px 0 16px;
+      letter-spacing: -.05em;
+      background: linear-gradient(135deg, var(--deep-pink), #ff8ab5, var(--pink));
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+      opacity: 0;
+      animation: fadeSlideUp .6s .4s ease forwards;
+    }
+    h2 {
+      font-size: clamp(1.7rem, 5vw, 2.5rem);
+      margin: 0 0 12px; letter-spacing: -.03em;
+      background: linear-gradient(135deg, var(--deep-pink), #ff8ab5);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    p {
+      font-size: clamp(1rem, 2.5vw, 1.12rem);
+      line-height: 1.75; color: var(--muted);
+    }
+    .nickname {
+      color: var(--deep-pink);
+      font-weight: 700;
+    }
+
+    /* ── Big heart emoji ── */
+    .big-heart {
+      font-size: 4.2rem; display: inline-block;
+      filter: drop-shadow(0 9px 18px #ffb4d0);
+      animation: heartbeat 1.7s infinite, float 4s ease-in-out infinite;
+    }
+
+    /* ── Buttons ── */
+    .buttons {
+      display: flex; gap: 14px;
+      justify-content: center; flex-wrap: wrap;
+      margin-top: 28px;
+    }
+    .btn {
+      border: 0; border-radius: 999px;
+      padding: 15px 28px; font-weight: 750;
+      font-size: 1rem;
+      transition: transform .25s cubic-bezier(.34,1.56,.64,1), box-shadow .3s ease;
+      position: relative; overflow: hidden;
+    }
+    .btn::after {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), rgba(255,255,255,.35) 0%, transparent 60%);
+      opacity: 0; transition: opacity .3s;
+    }
+    .btn:hover::after { opacity: 1; }
+    .btn:hover { transform: translateY(-3px) scale(1.03); }
+    .btn:active { transform: translateY(0) scale(.98); }
+
+    .primary {
+      color: white;
+      background: linear-gradient(135deg, var(--pink), var(--deep-pink));
+      box-shadow: 0 8px 28px rgba(232,62,131,.3);
+    }
+    .primary:hover {
+      box-shadow: 0 14px 40px rgba(232,62,131,.4);
+    }
+    .secondary {
+      background: #fff; color: var(--deep-pink);
+      border: 1.5px solid #ffd0e1;
+      box-shadow: 0 4px 16px rgba(232,62,131,.08);
+    }
+    .secondary:hover {
+      border-color: var(--pink);
+      box-shadow: 0 8px 24px rgba(232,62,131,.15);
+    }
+    .no {
+      background: #fff5f8; color: #b07a8e;
+      border: 1px solid #ffe0ed;
+      font-size: .92rem;
+      position: relative;
+      transition: transform .25s cubic-bezier(.34,1.56,.64,1), box-shadow .3s ease, left .3s cubic-bezier(.34,1.56,.64,1), top .3s cubic-bezier(.34,1.56,.64,1);
+      left: 0; top: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .no:hover {
+      background: #ffecf2; border-color: #ffb4d0;
+      box-shadow: 0 4px 16px rgba(232,62,131,.1);
+    }
+
+    /* ── Single-action button wrapper (no flex gap issue) ── */
+    .btn-wrap {
+      margin-top: 28px;
+      opacity: 0;
+      animation: fadeSlideUp .5s .6s ease forwards;
+    }
+
+    /* ── Note box ── */
+    .note {
+      background: #fff8fb;
+      border: 1px dashed #ffb4d0;
+      border-radius: 18px;
+      padding: 18px 20px;
+      text-align: left;
+      margin-top: 18px;
+    }
+    .note p { margin: 5px 0; }
+
+    .tiny { font-size: .85rem; color: var(--muted); margin-top: 14px; }
+
+    /* ── Progress indicator ── */
+    .progress {
+      display: flex; gap: 8px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #ffd0e1;
+      transition: all .4s ease;
+    }
+    .dot.active {
+      background: var(--deep-pink);
+      width: 24px; border-radius: 4px;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center; color: #a57b8e;
+      font-size: .82rem; padding-top: 24px;
+      opacity: 0;
+      animation: fadeSlideUp .6s 1s ease forwards;
+    }
+
+    /* ── Floating particles ── */
+    .floaty {
+      position: fixed; bottom: -40px;
+      pointer-events: none; z-index: 2;
+      opacity: .8;
+      animation: floatUp linear forwards;
+    }
+
+    /* ── Sparkle decorations ── */
+    .sparkle {
+      position: fixed;
+      color: #ff91bd;
+      pointer-events: none;
+      z-index: 0;
+      animation: twinkle 2.5s ease-in-out infinite alternate;
+    }
+    .s1 { top: 13%; left: 8%; font-size: 1.6rem; }
+    .s2 { right: 9%; top: 20%; font-size: 1.3rem; animation-delay: .5s; }
+    .s3 { bottom: 14%; left: 12%; font-size: 1.2rem; animation-delay: 1s; }
+    .s4 { top: 40%; right: 5%; font-size: 1.1rem; animation-delay: 1.5s; }
+    .s5 { bottom: 30%; right: 15%; font-size: 1.4rem; animation-delay: .8s; }
+
+    /* ── Confetti burst on "Yes" ── */
+    .confetti {
+      position: fixed;
+      width: 10px; height: 10px;
+      pointer-events: none; z-index: 3;
+      border-radius: 2px;
+      animation: confettiFall linear forwards;
+    }
+
+    /* ── Keyframes ── */
+    @keyframes cardIn {
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeSlideDown {
+      from { opacity: 0; transform: translateY(-12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes heartbeat {
+      0%,100% { transform: scale(1); }
+      12%     { transform: scale(1.12); }
+      24%     { transform: scale(1); }
+      36%     { transform: scale(1.08); }
+    }
+    @keyframes float {
+      0%,100% { transform: translateY(0); }
+      50%     { transform: translateY(-8px); }
+    }
+    @keyframes floatUp {
+      to { transform: translateY(-115vh) rotate(30deg); opacity: 0; }
+    }
+    @keyframes twinkle {
+      from { opacity: .3; transform: scale(.8) rotate(-10deg); }
+      to   { opacity: 1; transform: scale(1.2) rotate(10deg); }
+    }
+    @keyframes confettiFall {
+      0%   { opacity: 1; transform: translateY(0) rotate(0deg); }
+      100% { opacity: 0; transform: translateY(100vh) rotate(720deg); }
+    }
+    @keyframes shimmer {
+      0%   { background-position: -200% center; }
+      100% { background-position: 200% center; }
+    }
+
+    /* ── Mobile optimizations ── */
+    @media (max-width: 600px) {
+      .wrap {
+        width: 100%; padding: 16px 10px 40px;
+      }
+      .hero {
+        min-height: auto;
+        padding: 10px 0 20px;
+      }
+      .card {
+        width: 100%;
+        padding: 24px 18px 28px;
+        border-radius: 24px;
+      }
+      .topline {
+        font-size: .78rem; padding: 0 8px;
+      }
+      h1 {
+        font-size: clamp(1.8rem, 9vw, 2.8rem);
+        margin: 14px 0 12px;
+      }
+      h2 {
+        font-size: clamp(1.4rem, 7vw, 2rem);
+      }
+      p {
+        font-size: .98rem; line-height: 1.65;
+      }
+      .big-heart { font-size: 3.2rem; }
+      .eyebrow { font-size: .78rem; padding: 6px 12px; }
+
+      /* Stack buttons vertically on mobile */
+      .buttons {
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+      }
+      .btn {
+        width: 100%; max-width: 300px;
+        padding: 16px 24px;
+        font-size: 1rem;
+        /* Minimum 48px touch target */
+        min-height: 48px;
+      }
+      .btn-wrap { margin-top: 20px; }
+      .btn-wrap .btn { width: 100%; max-width: 300px; }
+
+      .note {
+        padding: 14px 14px;
+        border-radius: 14px;
+      }
+      .tiny { font-size: .8rem; margin-top: 10px; }
+      .progress { margin-bottom: 14px; }
+      .footer { font-size: .75rem; padding-top: 16px; }
+
+      /* Fewer ambient particles on mobile to save battery */
+      .sparkle { display: none; }
+    }
+
+    /* Extra small phones (SE, mini, etc.) */
+    @media (max-width: 375px) {
+      .card { padding: 20px 14px 24px; }
+      h1 { font-size: 1.6rem; }
+      h2 { font-size: 1.3rem; }
+      .big-heart { font-size: 2.6rem; }
+      .btn { padding: 14px 18px; font-size: .95rem; }
+    }
+
+    /* Safe area for notched phones */
+    @supports (padding: env(safe-area-inset-bottom)) {
+      .footer {
+        padding-bottom: calc(16px + env(safe-area-inset-bottom));
+      }
+      .wrap {
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+      }
+    }
+
+    /* ── Reduced motion ── */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="stars"></canvas>
+
+  <span class="sparkle s1">✦</span>
+  <span class="sparkle s2">✧</span>
+  <span class="sparkle s3">♡</span>
+  <span class="sparkle s4">✦</span>
+  <span class="sparkle s5">✧</span>
+
+  <main class="wrap">
+    <div class="topline">a tiny website made with a big smile 💗</div>
+
+    <section class="hero">
+      <!-- CARD 1: Intro -->
+      <div class="card" id="intro">
+        <div class="progress"><span class="dot active"></span><span class="dot"></span><span class="dot"></span></div>
+        <div class="big-heart" aria-hidden="true">💌</div>
+        <div><span class="eyebrow">psst… this is for you</span></div>
+        <h1>A little<br>surprise ✨</h1>
+        <p>I made this tiny corner of the internet for someone who has become a little extra special to me.</p>
+        <div class="btn-wrap">
+          <button class="btn primary" id="openBtn">Open your surprise 💗</button>
+        </div>
+        <p class="tiny">Best opened while we're on a call ☎️</p>
+      </div>
+
+      <!-- CARD 2: Story -->
+      <div class="card hidden" id="story">
+        <div class="progress"><span class="dot"></span><span class="dot active"></span><span class="dot"></span></div>
+        <div class="big-heart" aria-hidden="true">🥹</div>
+        <span class="eyebrow">one honest little thing</span>
+        <h2>I'm glad we met</h2>
+        <p>It's funny how someone you meet online can become part of your day. Talking with you makes ordinary moments feel brighter, and your messages have a way of making me smile<span id="herNameStory"></span>.</p>
+        <p>I don't want to make things awkward or rush you. I just wanted to be brave enough to tell you how I feel. 💞</p>
+        <div class="btn-wrap">
+          <button class="btn primary" id="questionBtn">Okay, what's the question? 🙈</button>
+        </div>
+      </div>
+
+      <!-- CARD 3: The Question -->
+      <div class="card hidden" id="question">
+        <div class="progress"><span class="dot"></span><span class="dot"></span><span class="dot active"></span></div>
+        <div class="big-heart" aria-hidden="true">💖</div>
+        <span class="eyebrow">deep breath… here goes!</span>
+        <h2>Would you like to be more than friends?</h2>
+        <p>I like you as more than a friend, and I'd love to see where this could go — if you feel the same. No pressure at all; your honest answer matters to me. 💗</p>
+        <div class="buttons">
+          <button class="btn primary" id="yesBtn">Yes, let's see! 🥰</button>
+          <button class="btn no" id="noBtn">No… 😔</button>
+        </div>
+        <p class="tiny">Every answer is okay. You don't owe me a particular one. 🌷</p>
+      </div>
+
+      <!-- CARD 4: Yes result -->
+      <div class="card hidden" id="yesResult" aria-live="polite">
+        <div class="big-heart">🥹💗</div>
+        <span class="eyebrow">okay, trying not to smile too much</span>
+        <h2>You've made me so happy!</h2>
+        <p>Thank you for being honest with me. Let's take it one step at a time, keep talking, and see what feels right for both of us. 💕</p>
+        <div class="note">
+          <p>Official status: two people smiling at their screens right now. 😄</p>
+          <p id="signoff"></p>
+        </div>
+        <div class="btn-wrap">
+          <button class="btn secondary" id="backBtn1">Read it again ↺</button>
+        </div>
+      </div>
+
+      <!-- NO STEP 1: Wait, really? -->
+      <div class="card hidden" id="no1" aria-live="polite">
+        <div class="big-heart" aria-hidden="true">😳</div>
+        <span class="eyebrow">wait wait wait</span>
+        <h2>Are you sure?</h2>
+        <p>Maybe you clicked too fast? I promise I don't bite… much. 😄</p>
+        <p>Take a second look — I made a whole website for you. That has to count for something, right? 🥺</p>
+        <div class="buttons">
+          <button class="btn primary" id="no1YesBtn">Okay fine, yes! 🥰</button>
+          <button class="btn no" id="no1NoBtn">Still no… 😬</button>
+        </div>
+      </div>
+
+      <!-- NO STEP 2: Dramatic plea -->
+      <div class="card hidden" id="no2" aria-live="polite">
+        <div class="big-heart" aria-hidden="true">😭</div>
+        <span class="eyebrow">okay this is getting dramatic</span>
+        <h2>Really really sure?</h2>
+        <p>I even added animations and sparkles and floating hearts for you! Do you know how many lines of code that is? 😤💔</p>
+        <p>Last chance to change your mind before I start writing sad poetry…</p>
+        <div class="buttons">
+          <button class="btn primary" id="no2YesBtn">Fine, you win 😂💗</button>
+          <button class="btn no" id="no2NoBtn">I'm sure… 🥲</button>
+        </div>
+      </div>
+
+      <!-- NO STEP 3: Final dramatic attempt -->
+      <div class="card hidden" id="no3" aria-live="polite">
+        <div class="big-heart" aria-hidden="true">🐶</div>
+        <span class="eyebrow">deploying secret weapon</span>
+        <h2>Look at this puppy face</h2>
+        <p>This is me right now. 🥺👉👈</p>
+        <p>You're really going to say no to THIS face? I'll share my snacks with you. I'll laugh at all your jokes. I'll even pretend to like that show you keep recommending. 😂</p>
+        <div class="buttons">
+          <button class="btn primary" id="no3YesBtn">OKAY YES 😂💗</button>
+          <button class="btn no" id="no3NoBtn">No means no 😅</button>
+        </div>
+      </div>
+
+      <!-- FINAL NO: Graceful acceptance -->
+      <div class="card hidden" id="noResult" aria-live="polite">
+        <div class="big-heart">🌻</div>
+        <span class="eyebrow">I respect that completely</span>
+        <h2>Thank you for being honest</h2>
+        <p>Hey, it took courage for both of us — me to ask, and you to answer honestly. That actually means a lot. 💛</p>
+        <p>Nothing changes between us unless you want it to. You're still someone I'm glad I met. 🌸</p>
+        <div class="note">
+          <p>Status: still friends, still good. And this website? Consider it a compliment. 😊</p>
+        </div>
+        <div class="btn-wrap">
+          <button class="btn secondary" id="backBtnNo">Read it all again ↺</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer">Made with care, not pressure. 💗<br><span class="tiny">This page doesn't send or save your answer anywhere.</span></div>
+  </main>
+
+  <script>
+    // ─── Personalize these two values before sharing ───
+    const HER_NICKNAME = ""; // Example: "Sunshine"
+    const YOUR_NICKNAME = ""; // Example: "Anuj"
+
+    // Apply nicknames to the page
+    if (HER_NICKNAME) {
+      const herStory = document.getElementById("herNameStory");
+      if (herStory) herStory.textContent = `, ${HER_NICKNAME}`;
+    }
+    if (YOUR_NICKNAME) {
+      const signoff = document.getElementById("signoff");
+      if (signoff) signoff.innerHTML = `— <span class="nickname">${YOUR_NICKNAME}</span> 💗`;
+    }
+
+    // ─── Card transitions ───
+    const sections = ["intro", "story", "question", "yesResult", "no1", "no2", "no3", "noResult"];
+    let currentCard = "intro";
+
+    function show(id) {
+      const outgoing = document.getElementById(currentCard);
+      if (outgoing && currentCard !== id) {
+        outgoing.style.animation = "none";
+        outgoing.offsetHeight; // reflow
+        outgoing.style.animation = "";
+        outgoing.style.opacity = "0";
+        outgoing.style.transform = "translateY(-20px) scale(.97)";
+        outgoing.style.transition = "opacity .35s ease, transform .35s ease";
+        setTimeout(() => {
+          outgoing.classList.add("hidden");
+          outgoing.style.transition = "";
+          outgoing.style.opacity = "";
+          outgoing.style.transform = "";
+          showCard(id);
+        }, 350);
+      } else {
+        showCard(id);
+      }
+    }
+
+    function showCard(id) {
+      sections.forEach(s => {
+        const el = document.getElementById(s);
+        if (s === id) {
+          el.classList.remove("hidden");
+          el.style.animation = "none";
+          el.offsetHeight;
+          el.style.animation = "cardIn .6s ease forwards";
+        } else {
+          el.classList.add("hidden");
+        }
+      });
+      currentCard = id;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      burstHearts(id === "yesResult" ? 30 : 8);
+      if (id === "yesResult") confettiBurst(60);
+    }
+
+    // ─── Button listeners ───
+    document.getElementById("openBtn").addEventListener("click", () => show("story"));
+    document.getElementById("questionBtn").addEventListener("click", () => show("question"));
+    document.getElementById("yesBtn").addEventListener("click", () => show("yesResult"));
+    document.getElementById("backBtn1").addEventListener("click", () => show("question"));
+
+    // No flow
+    document.getElementById("noBtn").addEventListener("click", () => show("no1"));
+    document.getElementById("no1YesBtn").addEventListener("click", () => show("yesResult"));
+    document.getElementById("no1NoBtn").addEventListener("click", () => show("no2"));
+    document.getElementById("no2YesBtn").addEventListener("click", () => show("yesResult"));
+    document.getElementById("no2NoBtn").addEventListener("click", () => show("no3"));
+    document.getElementById("no3YesBtn").addEventListener("click", () => show("yesResult"));
+    document.getElementById("no3NoBtn").addEventListener("click", () => show("noResult"));
+    document.getElementById("backBtnNo").addEventListener("click", () => show("intro"));
+
+    // ─── Button ripple glow tracking ───
+    document.querySelectorAll(".btn").forEach(btn => {
+      btn.addEventListener("mousemove", e => {
+        const rect = btn.getBoundingClientRect();
+        btn.style.setProperty("--x", ((e.clientX - rect.left) / rect.width * 100) + "%");
+        btn.style.setProperty("--y", ((e.clientY - rect.top) / rect.height * 100) + "%");
+      });
+    });
+
+    // ─── Runaway "No" button (only the last one!) ───
+    function runaway(btn) {
+      const card = btn.closest(".card");
+      if (!card) return;
+      const cardRect = card.getBoundingClientRect();
+      const btnRect = btn.getBoundingClientRect();
+      const pad = 20;
+      const mobile = window.innerWidth <= 600;
+      const maxX = mobile
+        ? Math.min(cardRect.width - btnRect.width - pad * 2, 140)
+        : cardRect.width - btnRect.width - pad * 2;
+      const maxY = mobile ? 60 : 120;
+      const randX = (Math.random() - 0.5) * maxX;
+      const randY = (Math.random() - 0.5) * maxY;
+      btn.style.left = randX + "px";
+      btn.style.top = randY + "px";
+    }
+
+    const lastNoBtn = document.getElementById("no3NoBtn");
+    lastNoBtn.addEventListener("mouseenter", () => runaway(lastNoBtn));
+    lastNoBtn.addEventListener("touchstart", e => {
+      e.preventDefault();
+      runaway(lastNoBtn);
+    }, { passive: false });
+
+    // ─── Mobile detection helper ───
+    const isMobile = window.innerWidth <= 600;
+
+    // ─── Floating hearts ───
+    function burstHearts(count) {
+      const actual = isMobile ? Math.ceil(count / 3) : count;
+      const symbols = ["♡", "💗", "💕", "✨", "🌸", "💖", "🩷"];
+      for (let i = 0; i < actual; i++) {
+        const el = document.createElement("span");
+        el.className = "floaty";
+        el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+        el.style.left = Math.random() * 100 + "vw";
+        el.style.fontSize = (16 + Math.random() * 24) + "px";
+        el.style.animationDuration = (3 + Math.random() * 4) + "s";
+        el.style.animationDelay = (Math.random() * .6) + "s";
+        document.body.appendChild(el);
+        el.addEventListener("animationend", () => el.remove(), { once: true });
+      }
+    }
+
+    // ─── Confetti burst ───
+    function confettiBurst(count) {
+      const actual = isMobile ? Math.ceil(count / 3) : count;
+      const colors = ["#ff5c9a", "#e83e83", "#ffb4d0", "#ff8ab5", "#ffd0e1", "#ff6b9d", "#c44dff", "#ffdd57"];
+      for (let i = 0; i < actual; i++) {
+        const el = document.createElement("div");
+        el.className = "confetti";
+        el.style.left = (30 + Math.random() * 40) + "vw";
+        el.style.top = (20 + Math.random() * 20) + "vh";
+        el.style.background = colors[Math.floor(Math.random() * colors.length)];
+        el.style.width = (6 + Math.random() * 8) + "px";
+        el.style.height = (6 + Math.random() * 8) + "px";
+        el.style.borderRadius = Math.random() > .5 ? "50%" : "2px";
+        el.style.animationDuration = (2 + Math.random() * 3) + "s";
+        el.style.animationDelay = (Math.random() * .8) + "s";
+        document.body.appendChild(el);
+        el.addEventListener("animationend", () => el.remove(), { once: true });
+      }
+    }
+
+    // Ambient hearts (less frequent on mobile)
+    setInterval(() => {
+      if (document.visibilityState === "visible" && Math.random() > .5) burstHearts(1);
+    }, isMobile ? 5000 : 3000);
+
+    // ─── Starfield canvas (fewer stars on mobile) ───
+    (function initStars() {
+      const canvas = document.getElementById("stars");
+      const ctx = canvas.getContext("2d");
+      let w, h, stars = [];
+      const starCount = isMobile ? 30 : 70;
+
+      function resize() {
+        w = canvas.width = window.innerWidth;
+        h = canvas.height = window.innerHeight;
+      }
+      window.addEventListener("resize", resize);
+      resize();
+
+      for (let i = 0; i < starCount; i++) {
+        stars.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          r: .4 + Math.random() * 1.6,
+          alpha: .2 + Math.random() * .5,
+          da: .003 + Math.random() * .008,
+          dir: Math.random() > .5 ? 1 : -1,
+        });
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, w, h);
+        for (const s of stars) {
+          s.alpha += s.da * s.dir;
+          if (s.alpha >= .8 || s.alpha <= .15) s.dir *= -1;
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(255,180,208,${s.alpha})`;
+          ctx.fill();
+        }
+        requestAnimationFrame(draw);
+      }
+      draw();
+    })();
+  </script>
+</body>
+</html>
